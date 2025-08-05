@@ -54,7 +54,7 @@ fun encodeToBinary(instruction: Instruction): String {
     return when (instruction) {
         is RegisterInstruction -> {
             val cond = "1110"
-            "1110" + "0010" + "1000" + instruction.rn.toString(2).padStart(4, '0') +
+            cond + "0010" + "1000" + instruction.rn.toString(2).padStart(4, '0') +
                     instruction.rd.toString(2).padStart(4, '0') + "000000000000"
         }
 
