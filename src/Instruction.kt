@@ -10,8 +10,10 @@ data class RegisterInstruction(
 data class ImmediateInstruction(
     val opCode: OpCode,
     val rd: Int,
+    val rn: Int?,
     val immediate: Int,
 ) : Instruction()
+
 
 data class MemoryInstruction(
     val opCode: OpCode,
@@ -25,16 +27,16 @@ data class BranchInstruction(
 ) : Instruction()
 
 enum class OpCode(val code: String, val binaryString: String) {
-    ADD(code = "ADD",  binaryString = "0100"),
+    ADD(code = "ADD", binaryString = "0010"),
     SUB(code = "SUB", binaryString = "0010"),
-    SUBS(code = "SUBS", binaryString = "0010"), // Added SUBS
-    ORR(code = "ORR", binaryString = "1100"),
-    MOVW(code = "MOVW", binaryString = "00110000"),
-    MOVT(code = "MOVT", binaryString = "00110100"),
-    LDR(code = "LDR", binaryString = "01100001"), // Added LDR
-    STR(code = "STR", binaryString = "01100000"), // Added STR
-    B(code = "B", binaryString = "10100000"),
-    BPL(code = "BPL", binaryString = "01010"); // Added BPL
+    SUBS(code = "SUBS", binaryString = "0010"),
+    ORR(code = "ORR", binaryString = "0011"),
+    MOVW(code = "MOVW", binaryString = "0011"),
+    MOVT(code = "MOVT", binaryString = "0011"),
+    LDR(code = "LDR", binaryString = "0100"),
+    STR(code = "STR", binaryString = "0100"),
+    B(code = "B", binaryString = "1010"),
+    BPL(code = "BPL", binaryString = "1010");
 
     companion object {
         fun fromCode(code: String): OpCode? {
