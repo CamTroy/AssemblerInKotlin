@@ -11,9 +11,8 @@ data class ImmediateInstruction(
     val opCode: OpCode,
     val rd: Int,
     val rn: Int?,
-    val immediate: Int,
+    val imm: Int,
 ) : Instruction()
-
 
 data class MemoryInstruction(
     val opCode: OpCode,

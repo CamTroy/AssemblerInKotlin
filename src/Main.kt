@@ -39,7 +39,10 @@ fun main() {
             append(flipBytes(binaryToHex(binary)))
         }
     }
-    File(newFilePath).writeText(content)
+
+    val byteArr: ByteArray = decodeHex(content)
+
+    File(newFilePath).writeBytes(byteArr)
 }
 
 fun binaryToHex(binary: String): String {
@@ -63,25 +66,28 @@ fun encodeToBinary(instruction: Instruction): String {
                 OpCode.MOVW -> {
                     val cond = "1110"
                     val op = "0011"
-                    val imm4 = (instruction.immediate shr 12).toString(2).padStart(4, '0')
+                    val imm4 = (instruction.imm shr 12).toString(2).padStart(4, '0')
                     val rd = instruction.rd.toString(2).padStart(4, '0')
-                    val imm12 = (instruction.immediate and 0xFFF).toString(2).padStart(12, '0')
+                    val imm12 = (instruction.imm and 0xFFF).toString(2).padStart(12, '0')
                     cond + op + "0000" + imm4 + rd + imm12
                 }
+
                 OpCode.MOVT -> {
                     val cond = "1110"
                     val op = "0011"
-                    val imm4 = (instruction.immediate shr 12).toString(2).padStart(4, '0')
+                    val imm4 = (instruction.imm shr 12).toString(2).padStart(4, '0')
                     val rd = instruction.rd.toString(2).padStart(4, '0')
-                    val imm12 = (instruction.immediate and 0xFFF).toString(2).padStart(12, '0')
+                    val imm12 = (instruction.imm and 0xFFF).toString(2).padStart(12, '0')
                     cond + op + "0100" + imm4 + rd + imm12
                 }
+
                 OpCode.ADD -> {
                     "1110" + "0010" + "1000" +
                             (instruction.rn?.toString(2)?.padStart(4, '0') ?: "0000") +
                             instruction.rd.toString(2).padStart(4, '0') +
-                            instruction.immediate.toString(2).padStart(12, '0')
+                            instruction.imm.toString(2).padStart(12, '0')
                 }
+
                 OpCode.SUBS -> {
                     val cond = "1110"
                     val op = "00"
@@ -90,9 +96,10 @@ fun encodeToBinary(instruction: Instruction): String {
                     val s = "1"
                     val rn = instruction.rn?.toString(2)?.padStart(4, '0') ?: "0000"
                     val rd = instruction.rd.toString(2).padStart(4, '0')
-                    val imm = instruction.immediate.toString(2).padStart(12, '0')
+                    val imm = instruction.imm.toString(2).padStart(12, '0')
                     cond + op + i + opcode + s + rn + rd + imm
                 }
+
                 OpCode.ORR -> {
                     val cond = "1110"
                     val op = "00"
@@ -101,9 +108,10 @@ fun encodeToBinary(instruction: Instruction): String {
                     val s = "0"
                     val rn = instruction.rn?.toString(2)?.padStart(4, '0') ?: "0000"
                     val rd = instruction.rd.toString(2).padStart(4, '0')
-                    val imm = instruction.immediate.toString(2).padStart(12, '0')
+                    val imm = instruction.imm.toString(2).padStart(12, '0')
                     cond + op + i + opcode + s + rn + rd + imm
                 }
+
                 else -> ""
             }
         }
@@ -135,6 +143,7 @@ fun encodeToBinary(instruction: Instruction): String {
                         .padStart(24, '1')
                     cond + op + link + offsetBinary
                 }
+
                 OpCode.B -> {
                     val cond = "1110"
                     val op = "101"
@@ -144,6 +153,7 @@ fun encodeToBinary(instruction: Instruction): String {
                         .padStart(24, '1')
                     cond + op + link + offsetBinary
                 }
+
                 else -> ""
             }
         }
@@ -159,4 +169,10 @@ fun flipBytes(hex: String): String {
     return hex.chunked(2)
         .reversed()
         .joinToString("")
+}
+
+fun decodeHex(hex: String): ByteArray {
+    return hex.chunked(2)
+        .map { it.toInt(16).toByte() }
+        .toByteArray()
 }
