@@ -1,6 +1,22 @@
 class InstructionParser {
+    private val labelPattern = Regex("<([A-Za-z0-9_]+)")
+    private val branchLabelPattern = Regex(">([A-Za-z0-9_]+)")
+
+    fun extractLabel(line: String): String? {
+        val matcher = labelPattern.find(line)
+        return matcher?.groupValues?.getOrNull(1)
+    }
+
+    fun extractBranchLabel(line: String): String? {
+        val matcher = branchLabelPattern.find(line)
+        return matcher?.groupValues?.getOrNull(1)
+    }
+
     fun parse(line: String): Instruction? {
-        val tokens = line.trim().split(Regex("[ ,#()]+")).filter { it.isNotEmpty() }
+        val cleanLine = line.substringBefore("<")
+        val tokens = cleanLine.trim().split(Regex("[ ,#()]+")).filter { it.isNotEmpty() }
+        if (tokens.isEmpty()) return null
+
         val opCode = OpCode.fromCode(tokens[0]) ?: return null
 
         return when (opCode) {
@@ -40,9 +56,20 @@ class InstructionParser {
                 MemoryInstruction(opCode, rd, rn)
             }
 
-            OpCode.BPL, OpCode.B -> {
-                val offset = tokens[1].removePrefix("0x").toInt(16)
-                BranchInstruction(opCode, offset)
+            OpCode.BPL, OpCode.B, OpCode.BL -> {
+                val target = tokens[1]
+                if (target.startsWith(">")) {
+                    val labelName = target.substring(1)
+                    BranchWithLabelInstruction(opCode, labelName)
+                } else {
+                    val offset = target.removePrefix("0x").toInt(16)
+                    BranchInstruction(opCode, offset)
+                }
+            }
+
+            OpCode.BX -> {
+                val rn = parseRegister(tokens[1]) ?: return null
+                RegisterInstruction(opCode, 0, rn)
             }
 
             else -> {

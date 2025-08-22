@@ -25,6 +25,11 @@ data class BranchInstruction(
     val offset: Int,
 ) : Instruction()
 
+data class BranchWithLabelInstruction(
+    val opCode: OpCode,
+    val label: String,
+) : Instruction()
+
 enum class OpCode(val code: String, val binaryString: String) {
     ADD(code = "ADD", binaryString = "0010"),
     SUB(code = "SUB", binaryString = "0010"),
@@ -35,7 +40,9 @@ enum class OpCode(val code: String, val binaryString: String) {
     LDR(code = "LDR", binaryString = "0100"),
     STR(code = "STR", binaryString = "0100"),
     B(code = "B", binaryString = "1010"),
-    BPL(code = "BPL", binaryString = "1010");
+    BPL(code = "BPL", binaryString = "1010"),
+    BL(code = "BL", binaryString = "1011"),
+    BX(code = "BX", binaryString = "0001");
 
     companion object {
         fun fromCode(code: String): OpCode? {

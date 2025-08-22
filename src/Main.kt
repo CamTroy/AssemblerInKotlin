@@ -2,33 +2,55 @@ import java.io.File
 
 fun main() {
     val parser = InstructionParser()
+    val labelManager = LabelManager()
     val filePath = "src/instructions.txt"
     val newFilePath = "src/kernel7.img"
 
     val instructions = readInstructions(filePath, mutableListOf())
 
-//    val instructions = listOf( // Test instructions
-//        "MOVW R4, 0",
-//        "MOVT R4, 0x3F20",
-//        "ADD R2, R4, 0x08",
-//        "LDR R3, (R2)",
-//        "ORR R3, R3, 0x00000008",
-//        "STR R3, (R2)",
-//        "ADD R3, R4, 0x1C",
-//        "MOVW R2, 0x0000",
-//        "MOVT R2, 0x0020",
-//        "STR R2, (R3)",
-//        "MOVW R5, 0x4240",
-//        "MOVT R5, 0x000F",
-//        "SUBS R5, R5, 1",
-//        "BPL 0xFFFD",
-//        "B 0xFFEE"
-//    )
-
-    val binaryInstructions = instructions.mapNotNull { line ->
-        parser.parse(line)?.let { instruction ->
-            encodeToBinary(instruction)
+    var instructionIndex = 0
+    instructions.forEach { line ->
+        val label = parser.extractLabel(line)
+        if (label != null) {
+            labelManager.addLabel(label, instructionIndex)
         }
+        if (line.trim().isNotEmpty() && !line.trim().startsWith("//")) {
+            instructionIndex++
+        }
+    }
+
+    println("Found labels:")
+    labelManager.getAllLabels().forEach { (name, addr) ->
+        println("$name -> $addr")
+    }
+
+    val parsedInstructions = instructions.mapNotNull { line ->
+        if (line.trim().isEmpty() || line.trim().startsWith("//")) {
+            null
+        } else {
+            parser.parse(line)
+        }
+    }
+
+    val binaryInstructions = mutableListOf<String>()
+
+    for (i in parsedInstructions.indices) {
+        val instruction = parsedInstructions[i]
+
+        val binary = when (instruction) {
+            is BranchWithLabelInstruction -> {
+                val targetAddress = labelManager.getLabel(instruction.label)
+                    ?: throw IllegalStateException("Unknown label: ${instruction.label}")
+
+                val currentInstructionAddr = i
+                val relativeOffset = targetAddress - currentInstructionAddr - 2
+
+                encodeBranchWithOffset(instruction.opCode, relativeOffset)
+            }
+            else -> encodeToBinary(instruction)
+        }
+
+        binaryInstructions.add(binary)
     }
 
     val content = buildString {
@@ -45,6 +67,25 @@ fun main() {
     File(newFilePath).writeBytes(byteArr)
 }
 
+fun encodeBranchWithOffset(opCode: OpCode, offset: Int): String {
+    val cond = when (opCode) {
+        OpCode.BPL -> "0101"
+        else -> "1110"
+    }
+
+    val op = "101"
+    val link = when (opCode) {
+        OpCode.BL -> "1"
+        else -> "0"
+    }
+
+    val offsetBinary = Integer.toBinaryString(offset and 0xFFFFFF)
+        .takeLast(24)
+        .padStart(24, if (offset < 0) '1' else '0')
+
+    return cond + op + link + offsetBinary
+}
+
 fun binaryToHex(binary: String): String {
     val paddedBinary = binary.padStart((binary.length + 3) / 4 * 4, '0')
 
@@ -56,9 +97,18 @@ fun binaryToHex(binary: String): String {
 fun encodeToBinary(instruction: Instruction): String {
     return when (instruction) {
         is RegisterInstruction -> {
-            val cond = "1110"
-            cond + "0010" + "1000" + instruction.rn.toString(2).padStart(4, '0') +
-                    instruction.rd.toString(2).padStart(4, '0') + "000000000000"
+            if (instruction.opCode == OpCode.BX) {
+                val cond = "1110"
+                val fixed = "000100101111111111110001"
+                val rn = instruction.rn.toString(2).padStart(4, '0')
+
+                cond + fixed + rn
+
+            } else {
+                val cond = "1110"
+                cond + "0010" + "1000" + instruction.rn.toString(2).padStart(4, '0') +
+                        instruction.rd.toString(2).padStart(4, '0') + "000000000000"
+            }
         }
 
         is ImmediateInstruction -> {
@@ -154,9 +204,21 @@ fun encodeToBinary(instruction: Instruction): String {
                     cond + op + link + offsetBinary
                 }
 
+                OpCode.BL -> {
+                    val cond = "1110"
+                    val op = "101"
+                    val link = "1" // BL sets link bit to 1
+                    val offsetBinary = Integer.toBinaryString(instruction.offset)
+                        .takeLast(24)
+                        .padStart(24, '1')
+                    cond + op + link + offsetBinary
+                }
+
                 else -> ""
             }
         }
+
+        else -> ""
     }
 }
 
