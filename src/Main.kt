@@ -218,6 +218,39 @@ fun encodeToBinary(instruction: Instruction): String {
             }
         }
 
+        is StackMultipleInstruction -> {
+            val cond = "1110"
+            val op = "100"
+            val p = "0"
+            val u = "1"
+            val s = "0"
+            val w = if (instruction.writeBack) "1" else "0"
+            val l = if (instruction.opCode == OpCode.LDMEA) "1" else "0"
+            val rn = instruction.baseReg.toString(2).padStart(4, '0')
+
+            val registerList = (0..15).joinToString("") { regNum ->
+                if (instruction.registers.contains(regNum)) "1" else "0"
+            }
+
+            cond + op + p + u + s + w + l + rn + registerList
+        }
+
+        is StackSingleInstruction -> {
+            val cond = "1110"
+            val op = "01"
+            val i = "0"
+            val p = "1"
+            val u = "1"
+            val b = "0"
+            val w = if (instruction.writeBack) "1" else "0"
+            val l = if (instruction.opCode == OpCode.LDREA) "1" else "0"
+            val rn = instruction.baseReg.toString(2).padStart(4, '0')
+            val rd = instruction.rd.toString(2).padStart(4, '0')
+            val offset = instruction.offset.toString(2).padStart(12, '0')
+
+            cond + op + i + p + u + b + w + l + rn + rd + offset
+        }
+
         else -> ""
     }
 }
