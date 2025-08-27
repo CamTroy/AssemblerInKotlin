@@ -7,11 +7,6 @@ class InstructionParser {
         return matcher?.groupValues?.getOrNull(1)
     }
 
-    fun extractBranchLabel(line: String): String? {
-        val matcher = branchLabelPattern.find(line)
-        return matcher?.groupValues?.getOrNull(1)
-    }
-
     fun parse(line: String): Instruction? {
         val cleanLine = line.substringBefore("<")
         val tokens = cleanLine.trim().split(Regex("[ ,#()]+")).filter { it.isNotEmpty() }

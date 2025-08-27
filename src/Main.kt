@@ -207,7 +207,7 @@ fun encodeToBinary(instruction: Instruction): String {
                 OpCode.BL -> {
                     val cond = "1110"
                     val op = "101"
-                    val link = "1" // BL sets link bit to 1
+                    val link = "1"
                     val offsetBinary = Integer.toBinaryString(instruction.offset)
                         .takeLast(24)
                         .padStart(24, '1')

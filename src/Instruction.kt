@@ -30,6 +30,22 @@ data class BranchWithLabelInstruction(
     val label: String,
 ) : Instruction()
 
+data class StackMultipleInstruction(
+    val opCode: OpCode,
+    val baseReg: Int,
+    val registers: List<Int>,
+    val writeBack: Boolean,
+) : Instruction()
+
+data class StackSingleInstruction(
+    val opCode: OpCode,
+    val baseReg: Int,
+    val rd: Int,
+    val offset: Int,
+    val writeBack: Boolean,
+) : Instruction()
+
+
 enum class OpCode(val code: String, val binaryString: String) {
     ADD(code = "ADD", binaryString = "0010"),
     SUB(code = "SUB", binaryString = "0010"),
@@ -42,7 +58,12 @@ enum class OpCode(val code: String, val binaryString: String) {
     B(code = "B", binaryString = "1010"),
     BPL(code = "BPL", binaryString = "1010"),
     BL(code = "BL", binaryString = "1011"),
-    BX(code = "BX", binaryString = "0001");
+    BX(code = "BX", binaryString = "0001"),
+    STMEA(code = "STMEA", binaryString = "1000"),
+    LDMEA(code = "LDMEA", binaryString = "1000"),
+    STREA(code = "STREA", binaryString = "1001"),
+    LDREA(code = "LDREA", binaryString = "1001");
+
 
     companion object {
         fun fromCode(code: String): OpCode? {
