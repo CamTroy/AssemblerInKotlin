@@ -1,5 +1,4 @@
 class InstructionParser {
-    private val stackManager = StackManager()
     private val labelPattern = Regex("<([A-Za-z0-9_]+)")
 
     fun extractLabel(line: String): String? {
