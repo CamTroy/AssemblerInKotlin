@@ -3,6 +3,7 @@ import java.io.File
 fun main() {
     val parser = InstructionParser()
     val labelManager = LabelManager()
+    val binaryPath = "src/binary.txt"
     val filePath = "src/instructions.txt"
     val newFilePath = "src/kernel7.img"
 
@@ -51,6 +52,7 @@ fun main() {
         }
 
         binaryInstructions.add(binary)
+        File(binaryPath).writeText(binaryInstructions.joinToString("\n"))
     }
 
     val content = buildString {
@@ -221,26 +223,27 @@ fun encodeToBinary(instruction: Instruction): String {
         is StackMultipleInstruction -> {
             val cond = "1110"
             val op = "100"
-            val p = "0"
-            val u = "1"
+            val p = if (instruction.opCode == OpCode.LDMEA) "1" else "0"
+            val u = if (instruction.opCode == OpCode.LDMEA) "0" else "1"
             val s = "0"
             val w = if (instruction.writeBack) "1" else "0"
             val l = if (instruction.opCode == OpCode.LDMEA) "1" else "0"
             val rn = instruction.baseReg.toString(2).padStart(4, '0')
 
-            val registerList = (0..15).joinToString("") { regNum ->
+            var registerList = (0..15).joinToString("") { regNum ->
                 if (instruction.registers.contains(regNum)) "1" else "0"
             }
+
+            registerList = registerList.reversed()
 
             cond + op + p + u + s + w + l + rn + registerList
         }
 
         is StackSingleInstruction -> {
             val cond = "1110"
-            val op = "01"
-            val i = "0"
-            val p = "1"
-            val u = "1"
+            val op = "010"
+            val p = if (instruction.opCode == OpCode.LDREA) "1" else "0"
+            val u = if (instruction.opCode == OpCode.LDREA) "0" else "1"
             val b = "0"
             val w = if (instruction.writeBack) "1" else "0"
             val l = if (instruction.opCode == OpCode.LDREA) "1" else "0"
@@ -248,8 +251,9 @@ fun encodeToBinary(instruction: Instruction): String {
             val rd = instruction.rd.toString(2).padStart(4, '0')
             val offset = instruction.offset.toString(2).padStart(12, '0')
 
-            cond + op + i + p + u + b + w + l + rn + rd + offset
+            cond + op + p + u + b + w + l + rn + rd + offset
         }
+
 
         else -> ""
     }

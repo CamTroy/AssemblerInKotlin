@@ -59,10 +59,10 @@ enum class OpCode(val code: String, val binaryString: String) {
     BPL(code = "BPL", binaryString = "1010"),
     BL(code = "BL", binaryString = "1011"),
     BX(code = "BX", binaryString = "0001"),
-    STMEA(code = "STMEA", binaryString = "1000"),
-    LDMEA(code = "LDMEA", binaryString = "1000"),
-    STREA(code = "STREA", binaryString = "1001"),
-    LDREA(code = "LDREA", binaryString = "1001");
+    STMEA(code = "STMEA", binaryString = "0100"),
+    LDMEA(code = "LDMEA", binaryString = "0100"),
+    STREA(code = "STREA", binaryString = "0100"),
+    LDREA(code = "LDREA", binaryString = "0100");
 
 
     companion object {

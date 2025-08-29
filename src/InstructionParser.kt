@@ -1,6 +1,6 @@
 class InstructionParser {
+    private val stackManager = StackManager()
     private val labelPattern = Regex("<([A-Za-z0-9_]+)")
-    private val branchLabelPattern = Regex(">([A-Za-z0-9_]+)")
 
     fun extractLabel(line: String): String? {
         val matcher = labelPattern.find(line)
@@ -9,7 +9,7 @@ class InstructionParser {
 
     fun parse(line: String): Instruction? {
         val cleanLine = line.substringBefore("<")
-        val tokens = cleanLine.trim().split(Regex("[ ,#()]+")).filter { it.isNotEmpty() }
+        val tokens = cleanLine.trim().split(Regex("[ ,#(){}]+")).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return null
 
         val opCode = OpCode.fromCode(tokens[0]) ?: return null
@@ -50,6 +50,48 @@ class InstructionParser {
                 val rn = parseRegister(tokens[2]) ?: return null
                 MemoryInstruction(opCode, rd, rn)
             }
+
+            OpCode.STMEA, OpCode.LDMEA -> {
+                if (tokens.size < 3) return null
+
+                val baseRegToken = tokens[1]
+                val writeBack = baseRegToken.endsWith("!")
+                val baseReg = parseRegister(baseRegToken.removeSuffix("!")) ?: return null
+
+                val registersList = mutableListOf<Int>()
+                for (i in 2 until tokens.size) {
+                    val regToken = tokens[i]
+                    if (regToken.contains("-")) {
+                        val range = regToken.split("-")
+                        if (range.size != 2) return null
+
+                        val startReg = parseRegister(range[0]) ?: return null
+                        val endReg = parseRegister(range[1]) ?: return null
+
+                        for (regNum in startReg..endReg) {
+                            registersList.add(regNum)
+                        }
+                    } else {
+                        val reg = parseRegister(regToken) ?: return null
+                        registersList.add(reg)
+                    }
+                }
+
+                StackMultipleInstruction(opCode, baseReg, registersList, writeBack)
+            }
+
+            OpCode.STREA, OpCode.LDREA -> {
+                if (tokens.size < 4) return null
+
+                val rd = parseRegister(tokens[1]) ?: return null
+                val baseRegToken = tokens[2]
+                val writeBack = baseRegToken.endsWith("!")
+                val baseReg = parseRegister(baseRegToken.removeSuffix("!")) ?: return null
+                val offset = tokens[3].toIntOrNull() ?: return null
+
+                StackSingleInstruction(opCode, baseReg, rd, offset, writeBack)
+            }
+
 
             OpCode.BPL, OpCode.B, OpCode.BL -> {
                 val target = tokens[1]
